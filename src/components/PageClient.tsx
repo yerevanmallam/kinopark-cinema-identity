@@ -5,11 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion"; // still used for the reveal flash overlay
 import { PhoneInput } from "@/components/PhoneInput";
 import { MovieCard } from "@/components/MovieCard";
+import { MovieCardStory } from "@/components/MovieCardStory";
 import { CardBack } from "@/components/CardBack";
 import { CardScene } from "@/components/CardScene";
 import { KinoLogo } from "@/components/KinoLogo";
-import { RewardModal } from "@/components/RewardModal";
 import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
+
+type CardFormat = "horizontal" | "story";
 
 /** Background image used by the 9:16 story card. Default is a hand-built
  * SVG at /public/story-bg.svg (vector, scales crisp, no raster bloat). To
@@ -61,12 +63,19 @@ export function PageClient() {
   const [isCharging, setIsCharging] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [savingCard, setSavingCard] = useState(false);
+  const [format, setFormat] = useState<CardFormat>("horizontal");
 
   const apiPromiseRef = useRef<Promise<ApiResponse> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const revealTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stepTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Refs to the rendered card DOM nodes — used as html-to-image capture
+  // targets when the user clicks Save Card. We need both refs so the
+  // 9:16 capture works even when the visible card is the 16:9 one (and
+  // vice-versa), without forcing a remount.
+  const horizontalCardRef = useRef<HTMLDivElement>(null);
+  const storyCardRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
   const archetypeOverride = searchParams.get("archetype");
@@ -194,33 +203,50 @@ export function PageClient() {
     };
   }, [stage, triggerReveal]);
 
-  const handleShare = useCallback(async () => {
-    if (!data) return;
-    const shareText = `I'm "${data.archetype.title}" at @kinoparkam — ${data.archetype.tagline}\n\nFind your cinema character ↓`;
-    const url = typeof window !== "undefined" ? window.location.origin : "https://kinopark.am";
-
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ text: shareText, url });
-        return;
-      } catch {
-        /* fall through */
-      }
-    }
-
+  // Save the *visible* card as a PNG. The capture target is the un-scaled
+  // card DOM node sitting inside CardScene; html-to-image inlines fonts and
+  // serialises the SVG bg, so the output matches what the user sees.
+  const handleSaveCard = useCallback(async () => {
+    if (!data || savingCard) return;
+    const node =
+      format === "story" ? storyCardRef.current : horizontalCardRef.current;
+    if (!node) return;
+    setSavingCard(true);
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${url}`);
+      // Wait for fonts so html-to-image doesn't capture FOUT/empty glyphs.
+      if (typeof document !== "undefined" && "fonts" in document && document.fonts) {
+        await document.fonts.ready;
+      }
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+        skipFonts: false,
+        backgroundColor: data.archetype.bg,
+      });
+      const link = document.createElement("a");
+      link.download = `kinopark-${data.archetype.id}-${data.serial}-${format}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.error("Save Card failed:", e);
+    } finally {
+      setSavingCard(false);
+    }
+  }, [data, format, savingCard]);
+
+  // Copy the promocode (the code is the redeemable thing). Falls back
+  // silently if clipboard API is blocked.
+  const handleCopyCode = useCallback(async () => {
+    if (!data) return;
+    try {
+      await navigator.clipboard.writeText(data.promocode);
       setCopyState("copied");
-      setTimeout(() => setCopyState("idle"), 2200);
+      setTimeout(() => setCopyState("idle"), 2000);
     } catch {
-      /* ignore */
+      /* ignore — clipboard rejected */
     }
   }, [data]);
-
-  // Modal handles the visible 9:16 preview + html-to-image PNG download.
-  // Triggers: the action button below the card AND the loyalty hint pill.
-  const openModal = useCallback(() => setModalOpen(true), []);
-  const closeModal = useCallback(() => setModalOpen(false), []);
 
   // Server-side render = empty dark backdrop. Client takes over after mount.
   if (!mounted) {
@@ -393,22 +419,51 @@ export function PageClient() {
             </div>
           )}
 
+          {/* Format tabs — only meaningful once the user has a card. Hidden
+              during landing/loading/revealing so the reveal flow stays
+              focused on the moment. */}
+          {stage === "result" && data && (
+            <FormatTabs format={format} onChange={setFormat} />
+          )}
+
           <CardScene
             flipped={isFlipped}
             charging={isCharging}
             interactive={stage === "result"}
             floating={stage === "landing"}
+            format={format}
             glowColor={data?.archetype.accent ?? "#CA4C16"}
           >
             <CardBack />
             {data ? (
-              <MovieCard
-                archetype={data.archetype}
-                badge={data.badge}
-                stats={data.stats}
-                insight={data.insight}
-                serial={data.serial}
-              />
+              format === "story" ? (
+                <div ref={storyCardRef} className="w-full h-full">
+                  <MovieCardStory
+                    archetype={data.archetype}
+                    badge={data.badge}
+                    stats={data.stats}
+                    insight={data.insight}
+                    serial={data.serial}
+                    promocode={data.promocode}
+                    reward={data.reward}
+                    revealCode={revealCode}
+                    bgImageUrl={STORY_BG_URL}
+                  />
+                </div>
+              ) : (
+                <div ref={horizontalCardRef} className="w-full h-full">
+                  <MovieCard
+                    archetype={data.archetype}
+                    badge={data.badge}
+                    stats={data.stats}
+                    insight={data.insight}
+                    serial={data.serial}
+                    promocode={data.promocode}
+                    reward={data.reward}
+                    revealCode={revealCode}
+                  />
+                </div>
+              )
             ) : (
               <div className="w-full h-full" />
             )}
@@ -487,44 +542,25 @@ export function PageClient() {
                   {data.motivation}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={openModal}
-                  className="flex items-center"
-                  style={{
-                    marginTop: "1.4rem",
-                    gap: "0.5rem",
-                    padding: "0.5rem 1rem",
-                    background: "rgba(202,76,22,0.08)",
-                    border: "1px solid rgba(202,76,22,0.25)",
-                    borderRadius: "999px",
-                    color: "rgba(255,200,170,0.92)",
-                    fontSize: "0.78rem",
-                    fontWeight: 500,
-                    letterSpacing: "0.02em",
-                    cursor: "pointer",
-                    transition: "background 150ms ease, border-color 150ms ease",
-                  }}
-                  aria-label="Open loyalty reward preview"
-                >
-                  <span style={{ color: "#CA4C16" }}>✦</span>
-                  <span>Your loyalty perk is inside</span>
-                  <span style={{ opacity: 0.7 }}>↓</span>
-                </button>
+                <RevealToggle on={revealCode} onChange={setRevealCode} />
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-[560px]">
-                  <button onClick={handleShare} className="kp-pill flex-1">
-                    {copyState === "copied" ? "✓ Copied" : "Share My Card"}
+                  <button
+                    onClick={handleSaveCard}
+                    disabled={savingCard}
+                    className="kp-pill flex-1"
+                  >
+                    {savingCard ? "Saving…" : "Save Card"}
                   </button>
                   <button
-                    onClick={openModal}
+                    onClick={handleCopyCode}
                     className="kp-pill flex-1"
                     style={{
                       background: "rgba(255,255,255,0.10)",
                       boxShadow: "none",
                     }}
                   >
-                    Save Story
+                    {copyState === "copied" ? "✓ Copied" : "Copy Code"}
                   </button>
                   <button onClick={handleReset} className="kp-pill-ghost flex-1">
                     Read Again
@@ -561,15 +597,6 @@ export function PageClient() {
           </div>
         </div>
       </main>
-
-      <RewardModal
-        open={modalOpen}
-        onClose={closeModal}
-        data={data}
-        revealCode={revealCode}
-        setRevealCode={setRevealCode}
-        bgImageUrl={STORY_BG_URL}
-      />
 
       {/* Footer */}
       <footer className="relative z-10 px-6 sm:px-12 py-5">
@@ -617,6 +644,158 @@ function NavLink({ href, label }: { href: string; label: string }) {
     >
       {label}
     </a>
+  );
+}
+
+/** Segmented control above the card. Flips between 16:9 and 9:16. */
+function FormatTabs({
+  format,
+  onChange,
+}: {
+  format: CardFormat;
+  onChange: (next: CardFormat) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Card format"
+      className="flex items-center"
+      style={{
+        gap: "0.25rem",
+        padding: "0.3rem",
+        borderRadius: "999px",
+        background: "rgba(255,255,255,0.05)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <FormatTab
+        active={format === "horizontal"}
+        onClick={() => onChange("horizontal")}
+        label="Card"
+        aspectIcon="horizontal"
+      />
+      <FormatTab
+        active={format === "story"}
+        onClick={() => onChange("story")}
+        label="Story"
+        aspectIcon="story"
+      />
+    </div>
+  );
+}
+
+function FormatTab({
+  active,
+  onClick,
+  label,
+  aspectIcon,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  aspectIcon: "horizontal" | "story";
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className="flex items-center"
+      style={{
+        gap: "0.45rem",
+        padding: "0.45rem 0.95rem",
+        borderRadius: "999px",
+        background: active ? "#CA4C16" : "transparent",
+        color: active ? "#FCFCFD" : "rgba(252,252,253,0.65)",
+        fontSize: "0.82rem",
+        fontWeight: active ? 600 : 500,
+        letterSpacing: "0.02em",
+        transition: "background 160ms ease, color 160ms ease",
+        cursor: "pointer",
+        border: "none",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          display: "inline-block",
+          width: aspectIcon === "horizontal" ? "16px" : "10px",
+          height: aspectIcon === "horizontal" ? "10px" : "16px",
+          borderRadius: "2px",
+          background: active ? "#FCFCFD" : "rgba(252,252,253,0.45)",
+          transition: "background 160ms ease",
+        }}
+      />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+/** Show-promo toggle below the card. Mirrors the `revealCode` page state. */
+function RevealToggle({
+  on,
+  onChange,
+}: {
+  on: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div
+      className="flex items-center"
+      style={{
+        marginTop: "1.4rem",
+        gap: "0.7rem",
+        padding: "0.45rem 0.85rem 0.45rem 1rem",
+        borderRadius: "999px",
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <span
+        style={{
+          fontSize: "0.78rem",
+          color: on ? "#FCFCFD" : "rgba(252,252,253,0.6)",
+          letterSpacing: "0.02em",
+          transition: "color 200ms ease",
+        }}
+      >
+        Show promo code
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label={on ? "Hide promo code" : "Show promo code"}
+        onClick={() => onChange(!on)}
+        style={{
+          width: "2.2rem",
+          height: "1.25rem",
+          borderRadius: "999px",
+          background: on ? "#CA4C16" : "rgba(255,255,255,0.16)",
+          position: "relative",
+          transition: "background 180ms ease",
+          cursor: "pointer",
+          flexShrink: 0,
+          border: "none",
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: on ? "calc(100% - 1.05rem)" : "2px",
+            width: "calc(1.25rem - 4px)",
+            height: "calc(1.25rem - 4px)",
+            borderRadius: "999px",
+            background: "#FCFCFD",
+            transition: "left 180ms ease",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }}
+        />
+      </button>
+    </div>
   );
 }
 

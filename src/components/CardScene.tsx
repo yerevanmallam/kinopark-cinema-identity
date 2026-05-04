@@ -16,6 +16,11 @@ interface CardSceneProps {
   floating: boolean;
   /** Color for the ambient glow behind the card. Defaults to KP orange. */
   glowColor?: string;
+  /**
+   * Card aspect & sizing. "horizontal" → 16:9 wide reveal card.
+   * "story" → 9:16 tall format. Default: "horizontal".
+   */
+  format?: "horizontal" | "story";
   children: [ReactNode, ReactNode]; // [back, front]
 }
 
@@ -30,8 +35,10 @@ export function CardScene({
   interactive,
   floating,
   glowColor = "#CA4C16",
+  format = "horizontal",
   children,
 }: CardSceneProps) {
+  const isStory = format === "story";
   const containerRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [glare, setGlare] = useState({ x: 50, y: 50 });
@@ -85,7 +92,11 @@ export function CardScene({
           ? { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
           : { type: "spring", stiffness: 120, damping: 20, mass: 0.8 }
       }
-      className="w-full max-w-[680px] sm:max-w-[880px]"
+      className={
+        isStory
+          ? "w-full max-w-[300px] sm:max-w-[380px]"
+          : "w-full max-w-[680px] sm:max-w-[880px]"
+      }
     >
       <div ref={containerRef} className="relative">
         <motion.div
@@ -96,7 +107,10 @@ export function CardScene({
           transition={{ type: "spring", stiffness: 200, damping: 22 }}
           style={{ perspective: "1400px" }}
         >
-          <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+          <div
+            className="relative w-full"
+            style={{ aspectRatio: isStory ? "9 / 16" : "16 / 9" }}
+          >
             <AnimatePresence mode="wait">
               {!flipped ? (
                 <motion.div

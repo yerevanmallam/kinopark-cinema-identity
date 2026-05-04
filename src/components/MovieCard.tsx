@@ -1,6 +1,6 @@
 "use client";
 
-import type { Archetype, Badge, CardStats } from "@/lib/archetypes";
+import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
 import { KinoLogo } from "@/components/KinoLogo";
 
 interface Props {
@@ -9,24 +9,37 @@ interface Props {
   stats: CardStats;
   insight: string;
   serial: string;
+  /** Per-user promocode shown in the reward pill near the bottom. */
+  promocode: string;
+  /** The loyalty reward this code unlocks. Drives the reward label + eyebrow. */
+  reward: Reward;
+  /** When false, the promocode pill renders heavily CSS-blurred. */
+  revealCode?: boolean;
 }
 
 /**
- * Cinema character card — clean & spacious. Five things on the card:
+ * Cinema character card — clean & spacious. Six things on the card:
  *
  *   1. KP logo + behaviour badge (top strip)
  *   2. Huge archetype title + small genre tag
  *   3. Three stats — big numbers, tiny labels
  *   4. The insight line (the soul of the card)
- *   5. Serial + url
- *
- * Tagline, Armenian title, and "Cinema Identity" wordmark were removed —
- * the user gets that flavour from the motivation copy under the card.
+ *   5. The loyalty reward + promocode (orange pill, blurred when revealCode=false)
+ *   6. Serial + url (footer)
  *
  * 16:9 for shareable social unfurl. Container query units (cqw) so the same
  * component renders crisp at every scale.
  */
-export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
+export function MovieCard({
+  archetype,
+  badge,
+  stats,
+  insight,
+  serial,
+  promocode,
+  reward,
+  revealCode = false,
+}: Props) {
   const { title, genre, bg, ink, accent } = archetype;
 
   // Title scaling — keep title to one line, leave room for stats below.
@@ -113,7 +126,7 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
         style={{
           left: "4cqw",
           right: "4cqw",
-          bottom: "10.5cqw",
+          bottom: "16cqw",
           gap: "6cqw",
         }}
       >
@@ -128,7 +141,7 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
         style={{
           left: "4cqw",
           right: "4cqw",
-          bottom: "6cqw",
+          bottom: "11cqw",
           gap: "1.2cqw",
           fontSize: "1.7cqw",
           fontWeight: 500,
@@ -145,6 +158,70 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
           ✦
         </span>
         <span style={{ color: ink, opacity: 0.92 }}>{insight}</span>
+      </div>
+
+      {/* ── Reward + promo row ──────────────────────────────────────── */}
+      <div
+        className="absolute flex items-center justify-between"
+        style={{
+          left: "4cqw",
+          right: "4cqw",
+          bottom: "5.5cqw",
+          gap: "2cqw",
+        }}
+      >
+        <div className="flex flex-col" style={{ gap: "0.4cqw", minWidth: 0 }}>
+          <div
+            className="kp-display"
+            style={{
+              fontSize: "2.4cqw",
+              fontWeight: 800,
+              lineHeight: 1,
+              letterSpacing: "-0.005em",
+              textTransform: "uppercase",
+              color: ink,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.8cqw",
+            }}
+          >
+            <span style={{ color: accent, fontSize: "2cqw" }}>✦</span>
+            <span>{reward.label}</span>
+          </div>
+          <div
+            style={{
+              color: accent,
+              fontSize: "0.95cqw",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              opacity: 0.85,
+            }}
+          >
+            {archetype.title} Exclusive
+          </div>
+        </div>
+        <span
+          className="kp-display"
+          style={{
+            display: "inline-block",
+            background: "#CA4C16",
+            padding: "1.1cqw 1.8cqw",
+            borderRadius: "1.4cqw",
+            fontSize: "1.7cqw",
+            color: "#FCFCFD",
+            letterSpacing: "0.1em",
+            fontWeight: 800,
+            fontFeatureSettings: "'tnum'",
+            boxShadow: "0 0 3cqw rgba(202,76,22,0.45)",
+            filter: revealCode ? "none" : "blur(6px)",
+            transition: "filter 200ms ease",
+            userSelect: revealCode ? "auto" : "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {promocode}
+        </span>
       </div>
 
       {/* ── Footer: serial + url ────────────────────────────────────── */}
