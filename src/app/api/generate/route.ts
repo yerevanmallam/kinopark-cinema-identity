@@ -7,9 +7,11 @@ import {
   buildStats,
   pickRandomArchetype,
   pickRandomBadge,
+  pickReward,
   type Archetype,
   type Badge,
   type CardStats,
+  type Reward,
 } from "@/lib/archetypes";
 
 /**
@@ -37,6 +39,8 @@ export type ApiResponse = {
   motivation: string;
   /** Per-user promocode. Marketing can override with `?promo=KPVIP10`. */
   promocode: string;
+  /** Loyalty reward this code unlocks. Override with `?reward=<id>`. */
+  reward: Reward;
 };
 
 const ARCHETYPE_LINES: Record<string, string> = {
@@ -82,6 +86,7 @@ export async function GET(req: Request) {
   const archetypeOverride = url.searchParams.get("archetype")?.trim();
   const badgeOverride = url.searchParams.get("badge")?.trim();
   const promoOverride = url.searchParams.get("promo")?.trim();
+  const rewardOverride = url.searchParams.get("reward")?.trim();
 
   if (!isValidPhone(phone)) {
     return NextResponse.json(
@@ -110,8 +115,18 @@ export async function GET(req: Request) {
   const promocode = promoOverride
     ? promoOverride.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 24)
     : buildPromocode(phone, archetype);
+  const reward = pickReward(archetype, rewardOverride);
 
-  const body: ApiResponse = { archetype, badge, stats, insight, serial, motivation, promocode };
+  const body: ApiResponse = {
+    archetype,
+    badge,
+    stats,
+    insight,
+    serial,
+    motivation,
+    promocode,
+    reward,
+  };
 
   return NextResponse.json(body, {
     headers: {
