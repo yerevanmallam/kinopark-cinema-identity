@@ -431,6 +431,29 @@ export function buildStats(seed: string, _archetype: Archetype): CardStats {
 }
 
 /**
+ * Deterministic promo code per (phone × archetype). Stable across reloads.
+ * Format: KP-XXXX-YYYY where XXXX is a 4-letter archetype tag and YYYY is
+ * 4 alphanumeric chars derived from the phone hash.
+ *
+ * Marketing can also force a specific code via the `?promo=…` URL param
+ * (handled in /api/generate). When the real loyalty system ships, swap this
+ * builder for a call to that service — the response shape stays the same.
+ */
+export function buildPromocode(seed: string, archetype: Archetype): string {
+  const tag = archetype.id
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 4)
+    .padEnd(4, "X");
+
+  const h = hash(seed + ":promo");
+  // 36^4 = 1_679_616 — plenty of variety, base36 keeps it human-readable.
+  const tail = (h % 1_679_616).toString(36).toUpperCase().padStart(4, "0");
+
+  return `KP-${tag}-${tail}`;
+}
+
+/**
  * Pick one insight template by hash, then expand it. The seed-derived
  * `pick` keeps every template field stable for a given user, so refreshing
  * the page never changes the insight wording.

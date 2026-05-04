@@ -9,6 +9,14 @@ interface Props {
   stats: CardStats;
   insight: string;
   serial: string;
+  /** Per-user promocode shown above the serial line. */
+  promocode: string;
+  /**
+   * When false, the promocode is heavily CSS-blurred — for screenshots and
+   * public sharing. When true (e.g. shared via private link with ?reveal=1),
+   * the code renders crisp.
+   */
+  revealCode?: boolean;
 }
 
 /**
@@ -26,7 +34,15 @@ interface Props {
  * 16:9 for shareable social unfurl. Container query units (cqw) so the same
  * component renders crisp at every scale.
  */
-export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
+export function MovieCard({
+  archetype,
+  badge,
+  stats,
+  insight,
+  serial,
+  promocode,
+  revealCode = false,
+}: Props) {
   const { title, genre, bg, ink, accent } = archetype;
 
   // Title scaling — keep title to one line, leave room for stats below.
@@ -113,7 +129,7 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
         style={{
           left: "4cqw",
           right: "4cqw",
-          bottom: "10.5cqw",
+          bottom: "14cqw",
           gap: "6cqw",
         }}
       >
@@ -128,7 +144,7 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
         style={{
           left: "4cqw",
           right: "4cqw",
-          bottom: "6cqw",
+          bottom: "9.5cqw",
           gap: "1.2cqw",
           fontSize: "1.7cqw",
           fontWeight: 500,
@@ -147,22 +163,61 @@ export function MovieCard({ archetype, badge, stats, insight, serial }: Props) {
         <span style={{ color: ink, opacity: 0.92 }}>{insight}</span>
       </div>
 
-      {/* ── Footer: serial + url ────────────────────────────────────── */}
+      {/* ── Footer: promo row (top) + serial row (bottom) ───────────── */}
       <div
-        className="absolute flex items-center justify-between"
-        style={{
-          left: "4cqw",
-          right: "4cqw",
-          bottom: "2.5cqw",
-          fontSize: "1cqw",
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          opacity: 0.45,
-          fontWeight: 600,
-        }}
+        className="absolute"
+        style={{ left: "4cqw", right: "4cqw", bottom: "2.5cqw" }}
       >
-        <span>N° {serial} / 2026</span>
-        <span>KINOPARK.AM</span>
+        <div
+          className="flex items-center justify-between"
+          style={{
+            paddingBottom: "1.4cqw",
+            borderBottom: `1px solid ${withAlpha(ink, 0.12)}`,
+          }}
+        >
+          <span
+            style={{
+              color: ink,
+              opacity: 0.55,
+              fontSize: "1.05cqw",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}
+          >
+            Promo Code
+          </span>
+          <span
+            className="kp-display"
+            style={{
+              color: accent,
+              fontSize: "1.7cqw",
+              letterSpacing: "0.12em",
+              fontWeight: 800,
+              fontFeatureSettings: "'tnum'",
+              filter: revealCode ? "none" : "blur(6px)",
+              transition: "filter 200ms ease",
+              userSelect: revealCode ? "auto" : "none",
+            }}
+          >
+            {promocode}
+          </span>
+        </div>
+
+        <div
+          className="flex items-center justify-between"
+          style={{
+            marginTop: "1.2cqw",
+            fontSize: "1cqw",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            opacity: 0.45,
+            fontWeight: 600,
+          }}
+        >
+          <span>N° {serial} / 2026</span>
+          <span>KINOPARK.AM</span>
+        </div>
       </div>
     </div>
   );

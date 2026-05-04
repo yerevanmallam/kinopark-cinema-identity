@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ARCHETYPES, BADGES, buildInsight, buildStats } from "@/lib/archetypes";
+import {
+  ARCHETYPES,
+  BADGES,
+  buildInsight,
+  buildPromocode,
+  buildStats,
+} from "@/lib/archetypes";
 import { MovieCard } from "@/components/MovieCard";
 import { KinoLogo } from "@/components/KinoLogo";
 
@@ -89,6 +95,7 @@ export default function DeckPage() {
             const seed = `${a.id}:${badge.id}:preview`;
             const stats = buildStats(seed, a);
             const insight = buildInsight(seed, a, stats);
+            const promocode = buildPromocode(seed, a);
             const serial = (1000 + i * 137).toString();
             return (
               <div key={a.id} className="flex flex-col" style={{ gap: "0.85rem" }}>
@@ -111,6 +118,8 @@ export default function DeckPage() {
                   stats={stats}
                   insight={insight}
                   serial={serial}
+                  promocode={promocode}
+                  revealCode
                 />
               </div>
             );

@@ -3,6 +3,7 @@ import {
   ARCHETYPES,
   BADGES,
   buildInsight,
+  buildPromocode,
   buildStats,
   pickRandomArchetype,
   pickRandomBadge,
@@ -34,6 +35,8 @@ export type ApiResponse = {
   insight: string;
   serial: string;
   motivation: string;
+  /** Per-user promocode. Marketing can override with `?promo=KPVIP10`. */
+  promocode: string;
 };
 
 const ARCHETYPE_LINES: Record<string, string> = {
@@ -78,6 +81,7 @@ export async function GET(req: Request) {
   const phone = url.searchParams.get("phone")?.trim() ?? "";
   const archetypeOverride = url.searchParams.get("archetype")?.trim();
   const badgeOverride = url.searchParams.get("badge")?.trim();
+  const promoOverride = url.searchParams.get("promo")?.trim();
 
   if (!isValidPhone(phone)) {
     return NextResponse.json(
@@ -100,8 +104,14 @@ export async function GET(req: Request) {
   const insight = buildInsight(phone, archetype, stats);
   const serial = generateSerial(phone);
   const motivation = `${ARCHETYPE_LINES[archetype.id]} ${BADGE_LINES[badge.id]}`;
+  // Promo: ?promo= force-overrides; otherwise derive deterministically from phone.
+  // Force-overrides are uppercased + sanitized so a stray ?promo=hello%20world
+  // can't smuggle weird chars onto the card.
+  const promocode = promoOverride
+    ? promoOverride.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 24)
+    : buildPromocode(phone, archetype);
 
-  const body: ApiResponse = { archetype, badge, stats, insight, serial, motivation };
+  const body: ApiResponse = { archetype, badge, stats, insight, serial, motivation, promocode };
 
   return NextResponse.json(body, {
     headers: {

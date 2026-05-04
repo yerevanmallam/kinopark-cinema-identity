@@ -5,10 +5,15 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion"; // still used for the reveal flash overlay
 import { PhoneInput } from "@/components/PhoneInput";
 import { MovieCard } from "@/components/MovieCard";
+import { MovieCardStory } from "@/components/MovieCardStory";
 import { CardBack } from "@/components/CardBack";
 import { CardScene } from "@/components/CardScene";
 import { KinoLogo } from "@/components/KinoLogo";
 import type { Archetype, Badge, CardStats } from "@/lib/archetypes";
+
+/** Background image used by the 9:16 story card. Drop a JPG/PNG at this
+ * path under /public to swap it. Placeholder lives at /public/story-bg.jpg. */
+const STORY_BG_URL = "/story-bg.jpg";
 
 type Stage = "landing" | "loading" | "revealing" | "result" | "error";
 
@@ -19,6 +24,7 @@ interface ApiResponse {
   insight: string;
   serial: string;
   motivation: string;
+  promocode: string;
 }
 
 const ANALYSIS_STEPS = [
@@ -53,15 +59,24 @@ export function PageClient() {
   const [isCharging, setIsCharging] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
+  const [savingStory, setSavingStory] = useState(false);
 
   const apiPromiseRef = useRef<Promise<ApiResponse> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const revealTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stepTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const storyRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
   const archetypeOverride = searchParams.get("archetype");
   const badgeOverride = searchParams.get("badge");
+  const promoOverride = searchParams.get("promo");
+
+  // ?reveal=1 → marketing-link mode, code visible by default. Otherwise
+  // the code is blurred until the user toggles it on.
+  const [revealCode, setRevealCode] = useState(
+    () => searchParams.get("reveal") === "1",
+  );
 
   useEffect(() => {
     return () => {
@@ -86,6 +101,7 @@ export function PageClient() {
     const qs = new URLSearchParams({ phone: p });
     if (archetypeOverride) qs.set("archetype", archetypeOverride);
     if (badgeOverride) qs.set("badge", badgeOverride);
+    if (promoOverride) qs.set("promo", promoOverride);
     apiPromiseRef.current = fetch(`/api/generate?${qs.toString()}`, {
       signal: controller.signal,
     }).then(async (res) => {
@@ -199,6 +215,30 @@ export function PageClient() {
       /* ignore */
     }
   }, [data]);
+
+  // Render the hidden 9:16 story card to a PNG and trigger a download.
+  // The off-screen render lives at fixed 1080px width so all `cqw` units in
+  // MovieCardStory resolve to crisp pixel sizes (1080 × 1920 = IG Story).
+  const handleSaveStory = useCallback(async () => {
+    if (!storyRef.current || !data || savingStory) return;
+    setSavingStory(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(storyRef.current, {
+        cacheBust: true,
+        pixelRatio: 1, // 1080 is already retina-grade
+        skipFonts: false,
+      });
+      const link = document.createElement("a");
+      link.download = `kinopark-${data.archetype.id}-${data.serial}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.error("Save Story failed:", e);
+    } finally {
+      setSavingStory(false);
+    }
+  }, [data, savingStory]);
 
   // Server-side render = empty dark backdrop. Client takes over after mount.
   if (!mounted) {
@@ -386,6 +426,8 @@ export function PageClient() {
                 stats={data.stats}
                 insight={data.insight}
                 serial={data.serial}
+                promocode={data.promocode}
+                revealCode={revealCode}
               />
             ) : (
               <div className="w-full h-full" />
@@ -465,9 +507,29 @@ export function PageClient() {
                   {data.motivation}
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full max-w-[480px]">
+                {/* Show-code toggle. Default OFF — code is blurred so the
+                    card screenshots safely. Marketing can hand out personal
+                    links with ?reveal=1 to flip it on for specific users. */}
+                <RevealToggle
+                  on={revealCode}
+                  onChange={setRevealCode}
+                  code={data.promocode}
+                />
+
+                <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-[560px]">
                   <button onClick={handleShare} className="kp-pill flex-1">
                     {copyState === "copied" ? "✓ Copied" : "Share My Card"}
+                  </button>
+                  <button
+                    onClick={handleSaveStory}
+                    disabled={savingStory}
+                    className="kp-pill flex-1"
+                    style={{
+                      background: "rgba(255,255,255,0.10)",
+                      boxShadow: "none",
+                    }}
+                  >
+                    {savingStory ? "Saving…" : "Save Story"}
                   </button>
                   <button onClick={handleReset} className="kp-pill-ghost flex-1">
                     Read Again
@@ -504,6 +566,35 @@ export function PageClient() {
           </div>
         </div>
       </main>
+
+      {/* ── Off-screen 9:16 story canvas — html-to-image renders this node
+            into a 1080×1920 PNG when the user clicks "Save Story". Kept in
+            the DOM at fixed pixel width so all `cqw` units in MovieCardStory
+            resolve consistently regardless of viewport size. */}
+      <div
+        ref={storyRef}
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: 0,
+          width: "1080px",
+          pointerEvents: "none",
+        }}
+      >
+        {data && (
+          <MovieCardStory
+            archetype={data.archetype}
+            badge={data.badge}
+            stats={data.stats}
+            insight={data.insight}
+            serial={data.serial}
+            promocode={data.promocode}
+            revealCode={revealCode}
+            bgImageUrl={STORY_BG_URL}
+          />
+        )}
+      </div>
 
       {/* Footer */}
       <footer className="relative z-10 px-6 sm:px-12 py-5">
@@ -551,6 +642,86 @@ function NavLink({ href, label }: { href: string; label: string }) {
     >
       {label}
     </a>
+  );
+}
+
+function RevealToggle({
+  on,
+  onChange,
+  code,
+}: {
+  on: boolean;
+  onChange: (next: boolean) => void;
+  code: string;
+}) {
+  return (
+    <div
+      className="flex items-center"
+      style={{
+        marginTop: "1.4rem",
+        gap: "0.85rem",
+        padding: "0.55rem 1rem 0.55rem 1.1rem",
+        borderRadius: "999px",
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <span
+        style={{
+          fontSize: "0.78rem",
+          color: "rgba(252,252,253,0.55)",
+          letterSpacing: "0.02em",
+        }}
+      >
+        Show promo code
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--font-display), system-ui",
+          fontSize: "0.85rem",
+          fontWeight: 700,
+          color: on ? "#CA4C16" : "rgba(252,252,253,0.55)",
+          letterSpacing: "0.06em",
+          filter: on ? "none" : "blur(4px)",
+          userSelect: on ? "auto" : "none",
+          transition: "filter 200ms ease, color 200ms ease",
+        }}
+      >
+        {code}
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label={on ? "Hide promo code" : "Show promo code"}
+        onClick={() => onChange(!on)}
+        style={{
+          width: "2.2rem",
+          height: "1.25rem",
+          borderRadius: "999px",
+          background: on ? "#CA4C16" : "rgba(255,255,255,0.16)",
+          position: "relative",
+          transition: "background 180ms ease",
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: on ? "calc(100% - 1.05rem)" : "2px",
+            width: "calc(1.25rem - 4px)",
+            height: "calc(1.25rem - 4px)",
+            borderRadius: "999px",
+            background: "#FCFCFD",
+            transition: "left 180ms ease",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }}
+        />
+      </button>
+    </div>
   );
 }
 
