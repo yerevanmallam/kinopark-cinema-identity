@@ -11,9 +11,10 @@ import { KinoLogo } from "@/components/KinoLogo";
 import { RewardModal } from "@/components/RewardModal";
 import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
 
-/** Background image used by the 9:16 story card. Drop a JPG/PNG at this
- * path under /public to swap it. Placeholder lives at /public/story-bg.jpg. */
-const STORY_BG_URL = "/story-bg.jpg";
+/** Background image used by the 9:16 story card. Default is a hand-built
+ * SVG at /public/story-bg.svg (vector, scales crisp, no raster bloat). To
+ * swap for a photo, drop a JPG/PNG into /public and update this path. */
+const STORY_BG_URL = "/story-bg.svg";
 
 type Stage = "landing" | "loading" | "revealing" | "result" | "error";
 

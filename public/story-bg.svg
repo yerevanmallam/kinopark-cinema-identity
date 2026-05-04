@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KinoPark — story-card background.
+  9:16 (1080×1920). Dark cinematic base, layered atmospheric glows in
+  brand orange + teal, distant cinema-seat silhouettes, soft top
+  "screen" glow, heavy film grain. Per-archetype tint stacks on top
+  in MovieCardStory.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1080 1920"
+     width="1080" height="1920"
+     preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Top soft glow — the "screen" light hitting the audience -->
+    <radialGradient id="screenGlow" cx="50%" cy="0%" r="70%">
+      <stop offset="0%"  stop-color="#1f1f23" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#0f1014" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#050507" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Brand orange glow, lower-left — matches the page atmospheric language -->
+    <radialGradient id="orangeAccent" cx="12%" cy="100%" r="65%">
+      <stop offset="0%"  stop-color="#CA4C16" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#CA4C16" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Brand teal glow, upper-right -->
+    <radialGradient id="tealAccent" cx="98%" cy="14%" r="55%">
+      <stop offset="0%"  stop-color="#1A5A56" stop-opacity="0.30"/>
+      <stop offset="60%" stop-color="#1A5A56" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Bottom vignette anchors text and tilts focus toward the card content -->
+    <linearGradient id="bottomVignette" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#000" stop-opacity="0"/>
+      <stop offset="55%" stop-color="#000" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.78"/>
+    </linearGradient>
+
+    <!-- Film grain — fractalNoise feels like 35mm stock, not digital noise -->
+    <filter id="grain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise"
+                    baseFrequency="0.78"
+                    numOctaves="3"
+                    seed="11"
+                    stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 0
+                              0 0 0 0 0
+                              0 0 0 0 0
+                              0 0 0 0.55 0"/>
+    </filter>
+
+    <!-- Single cinema seat silhouette, used in <use> below for distance rows -->
+    <symbol id="seat" viewBox="0 0 100 80">
+      <!-- Headrest + back -->
+      <rect x="10" y="2" width="80" height="60" rx="20" />
+      <!-- Armrests -->
+      <rect x="0" y="50" width="22" height="28" rx="8" />
+      <rect x="78" y="50" width="22" height="28" rx="8" />
+    </symbol>
+  </defs>
+
+  <!-- 1. Base gradient -->
+  <rect width="1080" height="1920" fill="url(#screenGlow)"/>
+
+  <!-- 2. Atmospheric brand glows -->
+  <rect width="1080" height="1920" fill="url(#orangeAccent)"/>
+  <rect width="1080" height="1920" fill="url(#tealAccent)"/>
+
+  <!--
+    3. Distant cinema seats — five staggered rows fading from bottom.
+       Sized in perspective so closer rows are larger. Filled black at
+       declining opacity so the per-archetype tint reads cleanly through.
+  -->
+  <g fill="#000">
+    <!-- Row 5 (back, smallest, faintest) -->
+    <g opacity="0.28" transform="translate(0, 1430)">
+      <use href="#seat" x="40"  y="0" width="80" height="64"/>
+      <use href="#seat" x="170" y="0" width="80" height="64"/>
+      <use href="#seat" x="300" y="0" width="80" height="64"/>
+      <use href="#seat" x="430" y="0" width="80" height="64"/>
+      <use href="#seat" x="560" y="0" width="80" height="64"/>
+      <use href="#seat" x="690" y="0" width="80" height="64"/>
+      <use href="#seat" x="820" y="0" width="80" height="64"/>
+      <use href="#seat" x="950" y="0" width="80" height="64"/>
+    </g>
+    <!-- Row 4 -->
+    <g opacity="0.36" transform="translate(-30, 1510)">
+      <use href="#seat" x="50"  y="0" width="100" height="80"/>
+      <use href="#seat" x="200" y="0" width="100" height="80"/>
+      <use href="#seat" x="350" y="0" width="100" height="80"/>
+      <use href="#seat" x="500" y="0" width="100" height="80"/>
+      <use href="#seat" x="650" y="0" width="100" height="80"/>
+      <use href="#seat" x="800" y="0" width="100" height="80"/>
+      <use href="#seat" x="950" y="0" width="100" height="80"/>
+    </g>
+    <!-- Row 3 -->
+    <g opacity="0.46" transform="translate(-60, 1610)">
+      <use href="#seat" x="40"  y="0" width="125" height="100"/>
+      <use href="#seat" x="220" y="0" width="125" height="100"/>
+      <use href="#seat" x="400" y="0" width="125" height="100"/>
+      <use href="#seat" x="580" y="0" width="125" height="100"/>
+      <use href="#seat" x="760" y="0" width="125" height="100"/>
+      <use href="#seat" x="940" y="0" width="125" height="100"/>
+    </g>
+    <!-- Row 2 -->
+    <g opacity="0.6" transform="translate(-90, 1730)">
+      <use href="#seat" x="40"  y="0" width="155" height="124"/>
+      <use href="#seat" x="260" y="0" width="155" height="124"/>
+      <use href="#seat" x="480" y="0" width="155" height="124"/>
+      <use href="#seat" x="700" y="0" width="155" height="124"/>
+      <use href="#seat" x="920" y="0" width="155" height="124"/>
+    </g>
+    <!-- Row 1 (closest, largest, darkest) -->
+    <g opacity="0.78" transform="translate(-130, 1870)">
+      <use href="#seat" x="60"  y="0" width="195" height="156"/>
+      <use href="#seat" x="320" y="0" width="195" height="156"/>
+      <use href="#seat" x="580" y="0" width="195" height="156"/>
+      <use href="#seat" x="840" y="0" width="195" height="156"/>
+      <use href="#seat" x="1100" y="0" width="195" height="156"/>
+    </g>
+  </g>
+
+  <!-- 4. Bottom vignette to keep text legible over the seats -->
+  <rect width="1080" height="1920" fill="url(#bottomVignette)"/>
+
+  <!-- 5. Film grain (last so it sits on everything) -->
+  <rect width="1080" height="1920" filter="url(#grain)" opacity="0.42"/>
+</svg>
