@@ -9,7 +9,7 @@ import { MovieCardStory } from "@/components/MovieCardStory";
 import { CardBack } from "@/components/CardBack";
 import { CardScene } from "@/components/CardScene";
 import { KinoLogo } from "@/components/KinoLogo";
-import type { Archetype, Badge, CardStats } from "@/lib/archetypes";
+import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
 
 /** Background image used by the 9:16 story card. Drop a JPG/PNG at this
  * path under /public to swap it. Placeholder lives at /public/story-bg.jpg. */
@@ -25,6 +25,7 @@ interface ApiResponse {
   serial: string;
   motivation: string;
   promocode: string;
+  reward: Reward;
 }
 
 const ANALYSIS_STEPS = [
@@ -590,6 +591,7 @@ export function PageClient() {
             insight={data.insight}
             serial={data.serial}
             promocode={data.promocode}
+            reward={data.reward}
             revealCode={revealCode}
             bgImageUrl={STORY_BG_URL}
           />

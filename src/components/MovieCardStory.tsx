@@ -1,6 +1,6 @@
 "use client";
 
-import type { Archetype, Badge, CardStats } from "@/lib/archetypes";
+import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
 import { KinoLogo } from "@/components/KinoLogo";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   insight: string;
   serial: string;
   promocode: string;
+  /** The loyalty reward this code unlocks. Drives the reward badge block. */
+  reward: Reward;
   /** Show the code crisp, or render it heavily blurred. Default: blurred. */
   revealCode?: boolean;
   /**
@@ -35,6 +37,7 @@ export function MovieCardStory({
   insight,
   serial,
   promocode,
+  reward,
   revealCode = false,
   bgImageUrl,
 }: Props) {
@@ -190,43 +193,97 @@ export function MovieCardStory({
           <span style={{ color: ink, opacity: 0.92 }}>{insight}</span>
         </div>
 
-        {/* Promo block — boxed, prominent, with optional blur */}
-        <div
-          style={{
-            marginTop: "5cqw",
-            padding: "4cqw 4.5cqw",
-            borderRadius: "3cqw",
-            background: withAlpha(ink, 0.07),
-            border: `1px solid ${withAlpha(ink, 0.14)}`,
-          }}
-        >
+        {/* Reward badge — the focal loyalty element. Picks up the per-user
+            reward (or marketing override). Code pill blurs until the user
+            toggles reveal in the modal. */}
+        <div style={{ marginTop: "5cqw" }}>
           <div
             style={{
               color: ink,
-              opacity: 0.55,
-              fontSize: "2cqw",
-              letterSpacing: "0.28em",
+              opacity: 0.65,
+              fontSize: "2.4cqw",
+              fontStyle: "italic",
+              lineHeight: 1.35,
+            }}
+          >
+            {reward.flair}
+          </div>
+
+          <div
+            className="kp-display"
+            style={{
+              marginTop: "2cqw",
+              fontSize: "9cqw",
+              fontWeight: 800,
+              lineHeight: 1,
+              letterSpacing: "-0.01em",
+              textTransform: "uppercase",
+              color: ink,
+              display: "flex",
+              alignItems: "center",
+              gap: "1.6cqw",
+              flexWrap: "wrap",
+            }}
+          >
+            <span>{reward.label}</span>
+            <span style={{ color: accent, fontSize: "8cqw", lineHeight: 1 }}>✦</span>
+          </div>
+
+          <div
+            style={{
+              marginTop: "1.5cqw",
+              color: accent,
+              fontSize: "2.4cqw",
+              letterSpacing: "0.24em",
               textTransform: "uppercase",
               fontWeight: 600,
             }}
           >
-            Your Promo Code
+            {archetype.title} Exclusive
           </div>
+
           <div
-            className="kp-display"
             style={{
-              marginTop: "1.5cqw",
-              color: accent,
-              fontSize: "5.8cqw",
-              letterSpacing: "0.08em",
-              fontWeight: 800,
-              fontFeatureSettings: "'tnum'",
-              filter: revealCode ? "none" : "blur(11px)",
-              transition: "filter 200ms ease",
-              userSelect: revealCode ? "auto" : "none",
+              marginTop: "3.5cqw",
+              display: "inline-block",
+              padding: "2.4cqw 3.6cqw",
+              background: "#CA4C16",
+              borderRadius: "2cqw",
+              boxShadow: `0 0 6cqw ${withAlpha("#CA4C16", 0.35)}`,
             }}
           >
-            {promocode}
+            <span
+              className="kp-display"
+              style={{
+                color: "#FCFCFD",
+                fontSize: "5cqw",
+                letterSpacing: "0.1em",
+                fontWeight: 800,
+                fontFeatureSettings: "'tnum'",
+                filter: revealCode ? "none" : "blur(11px)",
+                transition: "filter 200ms ease",
+                userSelect: revealCode ? "auto" : "none",
+                display: "block",
+              }}
+            >
+              {promocode}
+            </span>
+          </div>
+
+          <div
+            className="flex items-center justify-between"
+            style={{
+              marginTop: "2.5cqw",
+              fontSize: "1.9cqw",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              opacity: 0.55,
+              fontWeight: 600,
+              color: ink,
+            }}
+          >
+            <span>{revealCode ? "Tap code to copy" : "Tap to copy"}</span>
+            <span>Valid 30 days</span>
           </div>
         </div>
 
