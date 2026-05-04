@@ -205,15 +205,11 @@ export function MovieCard({
           className="kp-display"
           style={{
             display: "inline-block",
-            background: "#CA4C16",
-            padding: "1.1cqw 1.8cqw",
-            borderRadius: "1.4cqw",
-            fontSize: "1.7cqw",
-            color: "#FCFCFD",
+            fontSize: "2.2cqw",
+            color: "#CA4C16",
             letterSpacing: "0.1em",
             fontWeight: 800,
             fontFeatureSettings: "'tnum'",
-            boxShadow: "0 0 3cqw rgba(202,76,22,0.45)",
             filter: revealCode ? "none" : "blur(6px)",
             transition: "filter 200ms ease",
             userSelect: revealCode ? "auto" : "none",

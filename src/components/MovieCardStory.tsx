@@ -242,21 +242,12 @@ export function MovieCardStory({
             {archetype.title} Exclusive
           </div>
 
-          <div
-            style={{
-              marginTop: "3.5cqw",
-              display: "inline-block",
-              padding: "2.4cqw 3.6cqw",
-              background: "#CA4C16",
-              borderRadius: "2cqw",
-              boxShadow: `0 0 6cqw ${withAlpha("#CA4C16", 0.35)}`,
-            }}
-          >
+          <div style={{ marginTop: "3.5cqw" }}>
             <span
               className="kp-display"
               style={{
-                color: "#FCFCFD",
-                fontSize: "5cqw",
+                color: "#CA4C16",
+                fontSize: "6cqw",
                 letterSpacing: "0.1em",
                 fontWeight: 800,
                 fontFeatureSettings: "'tnum'",
