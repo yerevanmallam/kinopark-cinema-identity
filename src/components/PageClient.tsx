@@ -5,10 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion"; // still used for the reveal flash overlay
 import { PhoneInput } from "@/components/PhoneInput";
 import { MovieCard } from "@/components/MovieCard";
-import { MovieCardStory } from "@/components/MovieCardStory";
 import { CardBack } from "@/components/CardBack";
 import { CardScene } from "@/components/CardScene";
 import { KinoLogo } from "@/components/KinoLogo";
+import { RewardModal } from "@/components/RewardModal";
 import type { Archetype, Badge, CardStats, Reward } from "@/lib/archetypes";
 
 /** Background image used by the 9:16 story card. Drop a JPG/PNG at this
@@ -60,13 +60,12 @@ export function PageClient() {
   const [isCharging, setIsCharging] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
-  const [savingStory, setSavingStory] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const apiPromiseRef = useRef<Promise<ApiResponse> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const revealTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stepTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const storyRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
   const archetypeOverride = searchParams.get("archetype");
@@ -217,29 +216,10 @@ export function PageClient() {
     }
   }, [data]);
 
-  // Render the hidden 9:16 story card to a PNG and trigger a download.
-  // The off-screen render lives at fixed 1080px width so all `cqw` units in
-  // MovieCardStory resolve to crisp pixel sizes (1080 × 1920 = IG Story).
-  const handleSaveStory = useCallback(async () => {
-    if (!storyRef.current || !data || savingStory) return;
-    setSavingStory(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(storyRef.current, {
-        cacheBust: true,
-        pixelRatio: 1, // 1080 is already retina-grade
-        skipFonts: false,
-      });
-      const link = document.createElement("a");
-      link.download = `kinopark-${data.archetype.id}-${data.serial}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (e) {
-      console.error("Save Story failed:", e);
-    } finally {
-      setSavingStory(false);
-    }
-  }, [data, savingStory]);
+  // Modal handles the visible 9:16 preview + html-to-image PNG download.
+  // Triggers: the action button below the card AND the loyalty hint pill.
+  const openModal = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
 
   // Server-side render = empty dark backdrop. Client takes over after mount.
   if (!mounted) {
@@ -522,15 +502,14 @@ export function PageClient() {
                     {copyState === "copied" ? "✓ Copied" : "Share My Card"}
                   </button>
                   <button
-                    onClick={handleSaveStory}
-                    disabled={savingStory}
+                    onClick={openModal}
                     className="kp-pill flex-1"
                     style={{
                       background: "rgba(255,255,255,0.10)",
                       boxShadow: "none",
                     }}
                   >
-                    {savingStory ? "Saving…" : "Save Story"}
+                    Save Story
                   </button>
                   <button onClick={handleReset} className="kp-pill-ghost flex-1">
                     Read Again
@@ -568,35 +547,14 @@ export function PageClient() {
         </div>
       </main>
 
-      {/* ── Off-screen 9:16 story canvas — html-to-image renders this node
-            into a 1080×1920 PNG when the user clicks "Save Story". Kept in
-            the DOM at fixed pixel width so all `cqw` units in MovieCardStory
-            resolve consistently regardless of viewport size. */}
-      <div
-        ref={storyRef}
-        aria-hidden
-        style={{
-          position: "absolute",
-          left: "-9999px",
-          top: 0,
-          width: "1080px",
-          pointerEvents: "none",
-        }}
-      >
-        {data && (
-          <MovieCardStory
-            archetype={data.archetype}
-            badge={data.badge}
-            stats={data.stats}
-            insight={data.insight}
-            serial={data.serial}
-            promocode={data.promocode}
-            reward={data.reward}
-            revealCode={revealCode}
-            bgImageUrl={STORY_BG_URL}
-          />
-        )}
-      </div>
+      <RewardModal
+        open={modalOpen}
+        onClose={closeModal}
+        data={data}
+        revealCode={revealCode}
+        setRevealCode={setRevealCode}
+        bgImageUrl={STORY_BG_URL}
+      />
 
       {/* Footer */}
       <footer className="relative z-10 px-6 sm:px-12 py-5">
