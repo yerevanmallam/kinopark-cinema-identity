@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/*
+ * KinoPark brand tokens — extracted directly from kinopark.am.
+ *  bg              #0A0A0A   pure dark
+ *  text            #FCFCFD   near white
+ *  orange (cta)    #CA4C16   pill button accent
+ *  green (logo)    #A8C53C   eyebrow / section labels
+ *  panel           #0F1620   dark navy section panels
+ *  teal-glow       #1A5A56   atmospheric corner glow
+ */
+
+@theme inline {
+  --color-background: #0A0A0A;
+  --color-foreground: #FCFCFD;
+  --color-orange: #CA4C16;
+  --color-orange-hover: #E25A20;
+  --color-green: #A8C53C;
+  --color-panel: #0F1620;
+  --color-teal-glow: #1A5A56;
+  --color-muted: rgba(252, 252, 253, 0.6);
+  --color-faint: rgba(252, 252, 253, 0.35);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+html, body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+/* Display headlines — bold uppercase, no tracking (matches KinoPark exactly) */
+.kp-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  line-height: 0.95;
+}
+
+.kp-section-label {
+  color: var(--color-green);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* Pill button — every CTA on KinoPark is orange + 40px radius + white text */
+.kp-pill {
+  background: var(--color-orange);
+  color: var(--color-foreground);
+  border-radius: 40px;
+  padding: 0.85rem 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background 150ms ease, transform 150ms ease;
+  box-shadow: 0 0 50px rgba(202, 76, 22, 0.25);
+}
+
+.kp-pill:hover {
+  background: var(--color-orange-hover);
+}
+
+.kp-pill:active {
+  transform: scale(0.98);
+}
+
+.kp-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.kp-pill-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-foreground);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 40px;
+  padding: 0.85rem 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.kp-pill-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.kp-pill-ghost:active {
+  transform: scale(0.98);
+}
+
+/* ── Card-scene effects ───────────────────────────────────────────────── */
+
+@keyframes charge-border {
+  0%, 100% { box-shadow: inset 0 0 0 1.5px rgba(202, 76, 22, 0.10); }
+  50%      { box-shadow: inset 0 0 0 1.5px rgba(202, 76, 22, 0.45); }
+}
+
+.card-charge-border {
+  border-radius: 1.5cqw;
+  animation: charge-border 2s ease-in-out infinite;
+}
+
+@keyframes scan-line {
+  0%   { top: -2%; }
+  100% { top: 102%; }
+}
+
+.card-scan-line {
+  overflow: hidden;
+  border-radius: 1.5cqw;
+}
+
+.card-scan-line::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  top: -2%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(202, 76, 22, 0.3) 15%,
+    rgba(202, 76, 22, 0.7) 40%,
+    rgba(202, 76, 22, 1) 50%,
+    rgba(202, 76, 22, 0.7) 60%,
+    rgba(202, 76, 22, 0.3) 85%,
+    transparent 100%
+  );
+  border-radius: 2px;
+  animation: scan-line 2.5s ease-in-out infinite;
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20%  { transform: translate(-1px, 0.5px); }
+  40%  { transform: translate(1px, -0.5px); }
+  60%  { transform: translate(-0.5px, 1px); }
+  80%  { transform: translate(0.5px, -0.5px); }
+}
+
+.screen-shake {
+  animation: screen-shake 0.25s ease-out;
+}
+
+::selection {
+  background: rgba(202, 76, 22, 0.45);
+  color: #FCFCFD;
+}
+
+/* Simple fade-in used in place of framer-motion AnimatePresence for the
+   below-card stage transitions (which got into lockups under HMR). */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
