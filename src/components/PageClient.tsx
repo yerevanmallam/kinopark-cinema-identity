@@ -407,8 +407,6 @@ export function PageClient() {
                 stats={data.stats}
                 insight={data.insight}
                 serial={data.serial}
-                promocode={data.promocode}
-                revealCode={revealCode}
               />
             ) : (
               <div className="w-full h-full" />
@@ -488,16 +486,32 @@ export function PageClient() {
                   {data.motivation}
                 </p>
 
-                {/* Show-code toggle. Default OFF — code is blurred so the
-                    card screenshots safely. Marketing can hand out personal
-                    links with ?reveal=1 to flip it on for specific users. */}
-                <RevealToggle
-                  on={revealCode}
-                  onChange={setRevealCode}
-                  code={data.promocode}
-                />
+                <button
+                  type="button"
+                  onClick={openModal}
+                  className="flex items-center"
+                  style={{
+                    marginTop: "1.4rem",
+                    gap: "0.5rem",
+                    padding: "0.5rem 1rem",
+                    background: "rgba(202,76,22,0.08)",
+                    border: "1px solid rgba(202,76,22,0.25)",
+                    borderRadius: "999px",
+                    color: "rgba(255,200,170,0.92)",
+                    fontSize: "0.78rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.02em",
+                    cursor: "pointer",
+                    transition: "background 150ms ease, border-color 150ms ease",
+                  }}
+                  aria-label="Open loyalty reward preview"
+                >
+                  <span style={{ color: "#CA4C16" }}>✦</span>
+                  <span>Your loyalty perk is inside</span>
+                  <span style={{ opacity: 0.7 }}>↓</span>
+                </button>
 
-                <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-[560px]">
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-[560px]">
                   <button onClick={handleShare} className="kp-pill flex-1">
                     {copyState === "copied" ? "✓ Copied" : "Share My Card"}
                   </button>
@@ -605,83 +619,4 @@ function NavLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function RevealToggle({
-  on,
-  onChange,
-  code,
-}: {
-  on: boolean;
-  onChange: (next: boolean) => void;
-  code: string;
-}) {
-  return (
-    <div
-      className="flex items-center"
-      style={{
-        marginTop: "1.4rem",
-        gap: "0.85rem",
-        padding: "0.55rem 1rem 0.55rem 1.1rem",
-        borderRadius: "999px",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <span
-        style={{
-          fontSize: "0.78rem",
-          color: "rgba(252,252,253,0.55)",
-          letterSpacing: "0.02em",
-        }}
-      >
-        Show promo code
-      </span>
-      <span
-        style={{
-          fontFamily: "var(--font-display), system-ui",
-          fontSize: "0.85rem",
-          fontWeight: 700,
-          color: on ? "#CA4C16" : "rgba(252,252,253,0.55)",
-          letterSpacing: "0.06em",
-          filter: on ? "none" : "blur(4px)",
-          userSelect: on ? "auto" : "none",
-          transition: "filter 200ms ease, color 200ms ease",
-        }}
-      >
-        {code}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label={on ? "Hide promo code" : "Show promo code"}
-        onClick={() => onChange(!on)}
-        style={{
-          width: "2.2rem",
-          height: "1.25rem",
-          borderRadius: "999px",
-          background: on ? "#CA4C16" : "rgba(255,255,255,0.16)",
-          position: "relative",
-          transition: "background 180ms ease",
-          cursor: "pointer",
-          flexShrink: 0,
-        }}
-      >
-        <span
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: "2px",
-            left: on ? "calc(100% - 1.05rem)" : "2px",
-            width: "calc(1.25rem - 4px)",
-            height: "calc(1.25rem - 4px)",
-            borderRadius: "999px",
-            background: "#FCFCFD",
-            transition: "left 180ms ease",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-          }}
-        />
-      </button>
-    </div>
-  );
-}
 
