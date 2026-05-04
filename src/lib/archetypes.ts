@@ -33,6 +33,8 @@ export type Archetype = {
   signatureFilms: [string, string, string];
   /** Three mood adjectives */
   mood: [string, string, string];
+  /** Default loyalty reward when no `?reward=` override is set. */
+  defaultRewardId: string;
 };
 
 export const ARCHETYPES: Archetype[] = [
@@ -49,6 +51,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#D4B36A",
     signatureFilms: ["In the Mood for Love", "Stalker", "The Tree of Life"],
     mood: ["Patient", "Reverent", "Attentive"],
+    defaultRewardId: "premium-upgrade",
   },
   {
     id: "anime-devotee",
@@ -63,6 +66,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#FF8FAA",
     signatureFilms: ["Spirited Away", "Your Name", "The Boy and the Heron"],
     mood: ["Tender", "Wide-eyed", "Adrift"],
+    defaultRewardId: "free-combo",
   },
   {
     id: "drama-queen",
@@ -77,6 +81,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#FF5C45",
     signatureFilms: ["Marriage Story", "Manchester by the Sea", "Past Lives"],
     mood: ["Open", "Tender", "Devout"],
+    defaultRewardId: "free-popcorn",
   },
   {
     id: "horror-junkie",
@@ -91,6 +96,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#D9352B",
     signatureFilms: ["Hereditary", "The Witch", "Under the Skin"],
     mood: ["Steady", "Curious", "Composed"],
+    defaultRewardId: "free-late-show",
   },
   {
     id: "scifi-nerd",
@@ -105,6 +111,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#5DD0E6",
     signatureFilms: ["Blade Runner 2049", "Arrival", "Annihilation"],
     mood: ["Restless", "Searching", "Lucid"],
+    defaultRewardId: "premium-upgrade",
   },
   {
     id: "action-hero",
@@ -119,6 +126,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#FF8736",
     signatureFilms: ["Mad Max: Fury Road", "John Wick", "Mission: Impossible"],
     mood: ["Wired", "Alert", "Hungry"],
+    defaultRewardId: "bogo-weekday",
   },
   {
     id: "sleuth",
@@ -133,6 +141,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#E0B647",
     signatureFilms: ["Zodiac", "Memories of Murder", "Prisoners"],
     mood: ["Patient", "Sharp", "Quiet"],
+    defaultRewardId: "free-drink",
   },
   {
     id: "hopeless-romantic",
@@ -147,6 +156,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#FF447A",
     signatureFilms: ["Before Sunrise", "Notting Hill", "La La Land"],
     mood: ["Soft", "Hopeful", "Loyal"],
+    defaultRewardId: "date-night",
   },
   {
     id: "comedy-captain",
@@ -161,6 +171,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#FFD23D",
     signatureFilms: ["The Grand Budapest Hotel", "Superbad", "What We Do in the Shadows"],
     mood: ["Quick", "Warm", "Light"],
+    defaultRewardId: "free-popcorn",
   },
   {
     id: "indie-soul",
@@ -175,6 +186,7 @@ export const ARCHETYPES: Archetype[] = [
     accent: "#B388FF",
     signatureFilms: ["The Lighthouse", "Beau Is Afraid", "Good Time"],
     mood: ["Curious", "Stubborn", "Alive"],
+    defaultRewardId: "bogo-weekday",
   },
 ];
 
@@ -230,6 +242,83 @@ export const BADGES: Badge[] = [
     id: "the-regular",
     label: "The Regular",
     description: "Every month without fail. The staff know your name.",
+  },
+];
+
+/* ── Loyalty Rewards ────────────────────────────────────────────────── */
+
+export type Reward = {
+  id: string;
+  /** Headline on the card. Short. UPPERCASE works (rendered uppercase). */
+  label: string;
+  /** One-line flavour shown above the label. Specific > generic. */
+  flair: string;
+  /** Redemption instruction shown under the code pill. */
+  redemption: string;
+};
+
+/**
+ * The reward pool. The first 7 are mapped to archetypes as defaults; the
+ * last 2 are marketing-only — only reachable via `?reward=…` overrides.
+ *
+ * Adding a new reward: append it here, then either map an archetype's
+ * `defaultRewardId` to it (becomes a default) or leave it marketing-only.
+ */
+export const REWARDS: Reward[] = [
+  {
+    id: "free-popcorn",
+    label: "Free Large Popcorn",
+    flair: "Large salted, every screening.",
+    redemption: "Show this code at the snack bar",
+  },
+  {
+    id: "premium-upgrade",
+    label: "Premium Recliner Upgrade",
+    flair: "The recliner row, on the house.",
+    redemption: "Apply at booking — auto-upgrades the next premium seat",
+  },
+  {
+    id: "free-combo",
+    label: "Free Snack Combo",
+    flair: "Popcorn and a drink — one ticket, full ritual.",
+    redemption: "Show this code at the snack bar",
+  },
+  {
+    id: "free-late-show",
+    label: "Free Late-Show Ticket",
+    flair: "After 22:00, the cinema is yours.",
+    redemption: "Redeem at the box office for any late-night screening",
+  },
+  {
+    id: "bogo-weekday",
+    label: "Buy One, Get One Weekday",
+    flair: "Tuesday matinee. Empty hall. Plus one.",
+    redemption: "Apply at checkout, Mon–Thu screenings",
+  },
+  {
+    id: "free-drink",
+    label: "Free Drink",
+    flair: "A quiet sip for the slow burn.",
+    redemption: "Show this code at the snack bar",
+  },
+  {
+    id: "date-night",
+    label: "Date Night — 2 Tickets",
+    flair: "Two tickets, weekend, evening.",
+    redemption: "Redeem at the box office, weekend evening shows",
+  },
+  // — Marketing-only rewards (URL ?reward=…)
+  {
+    id: "double-points",
+    label: "Double Loyalty Points",
+    flair: "Every ticket counts twice — for 30 days.",
+    redemption: "Auto-applies to every purchase on your account",
+  },
+  {
+    id: "twenty-off-any",
+    label: "20% Off Any Ticket",
+    flair: "Any film, any seat, twenty off.",
+    redemption: "Apply at checkout — no minimums",
   },
 ];
 
@@ -451,6 +540,30 @@ export function buildPromocode(seed: string, archetype: Archetype): string {
   const tail = (h % 1_679_616).toString(36).toUpperCase().padStart(4, "0");
 
   return `KP-${tag}-${tail}`;
+}
+
+/**
+ * Resolve which reward to show. Marketing's `?reward=…` URL param force-
+ * overrides; otherwise we use the archetype's `defaultRewardId`.
+ *
+ * Override is sanitized (lower-case, alnum + dash only) and validated
+ * against the pool — unknown ids fall through to the default. This
+ * matches how `?archetype=` and `?badge=` overrides behave.
+ */
+export function pickReward(archetype: Archetype, override?: string | null): Reward {
+  if (override) {
+    const safe = override.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const forced = REWARDS.find((r) => r.id === safe);
+    if (forced) return forced;
+  }
+  const def = REWARDS.find((r) => r.id === archetype.defaultRewardId);
+  if (!def) {
+    // Defensive: every archetype should map to a real reward. If a typo
+    // slips into a defaultRewardId, fall back to the first reward in the
+    // pool rather than throw — keeps the API working in production.
+    return REWARDS[0];
+  }
+  return def;
 }
 
 /**
